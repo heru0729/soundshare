@@ -1,427 +1,226 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101827">
-<title>OTO — 音響ファイル転送</title>
-<style>
-:root{color-scheme:dark;--bg:#0b1120;--panel:#121c2e;--line:#29364d;--text:#eef4ff;--muted:#a6b4ca;--accent:#7dd3fc;--good:#86efac;--warn:#fcd34d;--bad:#fca5a5}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#162642 0,var(--bg) 55%);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:1000px;margin:auto;padding:28px 18px 60px}.top{display:flex;align-items:center;gap:14px;margin-bottom:24px}.logo{width:52px;height:52px;border-radius:16px;background:#17334b;display:grid;place-items:center;color:var(--accent);font-size:26px;font-weight:800}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:.16em;text-transform:uppercase}.top h1{margin:0;font-size:clamp(24px,4vw,34px);line-height:1.2}.top p{margin:5px 0 0;color:var(--muted);font-size:14px}
-.notice{border:1px solid #66552c;background:#302817;color:#fce7a8;border-radius:14px;padding:13px 15px;margin:18px 0 22px;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.panel{background:linear-gradient(160deg,rgba(24,37,59,.97),rgba(15,24,40,.97));border:1px solid var(--line);border-radius:20px;padding:20px;min-width:0}.panel h2{margin:0 0 5px;font-size:21px}.sub{color:var(--muted);font-size:14px;margin:0 0 18px}.icon{color:var(--accent);font-size:24px;margin-bottom:8px}.drop{border:1px dashed #526783;border-radius:14px;padding:20px 12px;text-align:center;background:#0d1728}.drop strong{display:block;margin-bottom:5px}.drop small{color:var(--muted)}input[type=file]{width:100%;margin-top:12px;color:var(--muted)}button,.button{border:0;border-radius:12px;padding:12px 16px;background:var(--accent);color:#082032;font-weight:750;cursor:pointer;font-size:15px;min-height:46px}button:disabled{opacity:.42;cursor:not-allowed}.secondary{background:#26364e;color:var(--text);border:1px solid #3a4d68}.danger{background:#572b35;color:#ffe4e6}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}.actions button{flex:1}.filemeta{color:var(--muted);font-size:13px;margin-top:12px;overflow-wrap:anywhere}.status{border-radius:12px;background:#0b1525;border:1px solid var(--line);padding:12px;margin-top:14px;min-height:48px;font-size:14px;overflow-wrap:anywhere}.status.good{color:var(--good)}.status.warn{color:var(--warn)}.status.bad{color:var(--bad)}progress{width:100%;height:10px;margin-top:12px;accent-color:var(--accent)}.meter{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:4px}.details{margin-top:18px;border-top:1px solid var(--line);padding-top:15px;color:var(--muted);font-size:13px}.testgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}.testwide{grid-column:1/-1}.testtable{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}.testtable th,.testtable td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}.testtable th{color:var(--muted);font-weight:600}.testtable td.num{text-align:right;font-variant-numeric:tabular-nums}.testnote{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#26364e;color:var(--text);font-size:12px}.details summary{cursor:pointer;color:var(--text);font-weight:650}.details li{margin:5px 0}.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:22px}
-@media(max-width:720px){.grid{grid-template-columns:1fr}.panel{padding:17px}main{padding:20px 12px 40px}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acoustic Data Transfer - Web Audio</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 0 15px;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      padding: 8px;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:disabled { background: #ccc; }
+    .status {
+      margin-top: 10px;
+      padding: 8px;
+      background: #e9ecef;
+      border-radius: 4px;
+      font-family: monospace;
+      word-break: break-all;
+    }
+  </style>
 </head>
 <body>
-<main>
-  <header class="top">
-    <div class="logo">音</div>
-    <div><div class="eyebrow">OFFLINE ACOUSTIC TRANSFER</div><h1>OTO — 音でファイルを送る</h1><p>ファイル本体をサーバーに送らず、スピーカーとマイクで端末間転送</p></div>
-  </header>
-  <div class="notice"><strong>試作版・重要：</strong>上限1 MiB（1 MB級）の試作版です。16-FSK・1 ms/シンボルでチャンクごとに送信します。1 MiBの転送には理論上約35分かかり、実機・ブラウザー・音響環境によって失敗する場合があります。受信側は音声を録音してから復号します。重要なデータには使用しないでください。</div>
-  <div class="grid">
-    <section class="panel">
-      <div class="icon">↗</div><h2>端末1 — 送信</h2><p class="sub">ファイルを16-FSK音響信号に変換し、チャンク単位で再生します。</p>
-      <div class="drop"><strong>送信するファイルを選択</strong><small>ファイルはこのブラウザー内で処理されます。上限1 MiB（1,048,576 bytes）。</small><input id="fileInput" type="file"></div>
-      <div id="sendMeta" class="filemeta">ファイル未選択</div>
-      <div class="actions"><button id="sendBtn" disabled>音を生成して送信</button><button id="stopSendBtn" class="secondary" disabled>停止</button></div>
-      <progress id="sendProgress" value="0" max="100"></progress><div class="meter"><span>送信進捗</span><span id="sendPct">0%</span></div>
-      <div id="sendStatus" class="status">ファイルを選択してください。</div>
-    </section>
-    <section class="panel">
-      <div class="icon">↙</div><h2>端末2 — 受信</h2><p class="sub">マイクで音を記録し、送信終了後に各チャンクを復元・検証します。</p>
-      <div class="drop"><strong>受信の準備</strong><small>ブラウザーのマイク使用許可が必要です。HTTPSで開いてください。</small></div>
-      <div class="actions"><button id="startRecBtn">録音を開始</button><button id="stopRecBtn" class="secondary" disabled>録音を停止して復号</button></div>
-      <progress id="recvProgress" value="0" max="100"></progress><div class="meter"><span>解析状況</span><span id="recvPct">待機中</span></div>
-      <div id="recvStatus" class="status">送信側の再生を始める前に録音を開始してください。</div>
-      <a id="downloadLink" hidden></a>
-    </section>
+
+  <h1>🔊 音響データ転送 (OFDM/Web Audio)</h1>
+  <p>Wi-Fi・Bluetooth不要！音（ノイズ）でデータを送信します。</p>
+
+  <!-- 送信セクション -->
+  <div class="card">
+    <h2>1. 送信 (スピーカー)</h2>
+    <textarea id="sendText" placeholder="送信するテキストを入力...">Hello World!</textarea>
+    <button id="sendBtn">音で送信開始</button>
   </div>
-  <section class="panel" style="margin-top:16px">
-    <div class="icon">〰</div><h2>16-FSK 周波数帯テスト</h2>
-    <p class="sub">オクターブ4〜10を順番に測定します。各帯域で16周波数を1msずつ切り替え、受信側で検出率を集計します。これは転送モードとは独立した試験機能です。</p>
-    <div class="notice" style="margin:0 0 14px"><strong>測定前の設定：</strong>16-FSK・1ms/記号・送信振幅60%・オクターブ4〜10。音声の実サンプルレートに対しナイキスト周波数を超える音は生成せず、受信側でも検出可能範囲を表示します。1msでは低い周波数の判別が物理的に難しく、結果が低くなる可能性があります。</div>
-    <div class="actions">
-      <button id="testRecBtn">テスト録音を開始</button>
-      <button id="testSendBtn" class="secondary">全帯域テスト音を送信</button>
-      <button id="testStopBtn" class="secondary" disabled>録音を停止して集計</button>
-    </div>
-    <progress id="testProgress" value="0" max="100"></progress><div class="meter"><span>試験信号の進行</span><span id="testPct">未開始</span></div>
-    <div id="testStatus" class="status">まず受信側でテスト録音を開始し、次に送信側で全帯域テスト音を送信してください。</div>
-    <div id="testSetup" class="testnote">測定前の設定値：16-FSK · 1ms/記号 · 振幅60% · オクターブ4〜10 · 16音/オクターブ</div>
-    <div id="testResults"></div>
-  </section>
-  <details class="details"><summary>方式・制約</summary>
-    <ul>
-      <li>通常のファイル転送は従来の4-FSK方式です。追加の周波数帯テストは独立した16-FSK試験で、通常転送方式を変更しません。</li>
-      <li>フレームにはファイル名・サイズ・CRC-32を含め、復号後に破損を検査します。</li>
-      <li>ファイル転送は16-FSK・1 ms/シンボル、最大1 MiB、16 KiB単位のチャンク送信です。各チャンクをCRC-32で検証します。1 MiBの実際の転送には約35分かかる計算で、録音メモリも数百MBになるため、デスクトップ環境を推奨します。</li>
-      <li>高度なFECや自動再送を実装していません。音が欠落すると復号に失敗する可能性があります。</li>
-      <li>録音データは端末内のメモリで処理し、アプリから外部サーバーへアップロードしません。</li>
-      <li>受信処理は音の開始マーカーとシンボル時間に依存します。ブラウザー、マイク、スピーカー、音量によって動作結果が異なります。</li>
-      <li>GitHub Pagesにはこの静的サイトのファイルだけを配置します。送受信対象のファイルをリポジトリへ追加しないでください。</li>
-    </ul>
-  </details>
-  <p class="foot">OTO prototype · 静的サイト · ファイル保存サーバー不使用</p>
-</main>
-<script>
-"use strict";
-const $ = id => document.getElementById(id);
-const MAX_FILE_SIZE = 1048576; // 1 MiB
-const CHUNK_SIZE = 16384;
-const SYMBOL_MS = 1;
-const SAMPLE_RATE = 48000;
-const MARKER_MS = 150;
-const GAP_MS = 20;
-const TONES = Array.from({length:16},(_,i)=>5000+i*1000); // 5–20 kHz, 1 kHz spacing
-const SYNC = [0,3,7,12,5,10,15,2,8,1,13,6,11,4,14,9];
-let selectedFile=null, sendAudioCtx=null, sendSource=null, sendStop=false;
-let micStream=null, recCtx=null, processor=null, recorded=[], recording=false;
-let decodedBlob=null, recvSource=null;
 
-function setStatus(id,text,type=""){const el=$(id);el.textContent=text;el.className="status"+(type?" "+type:"");}
-function fmtBytes(n){if(n<1024)return n+" B";if(n<1048576)return(n/1024).toFixed(1)+" KB";return(n/1048576).toFixed(2)+" MiB";}
-function crc32(bytes){let c=0xffffffff;for(let i=0;i<bytes.length;i++){c^=bytes[i];for(let j=0;j<8;j++)c=(c>>>1)^((c&1)?0xedb88320:0);}return(c^0xffffffff)>>>0;}
-function u16(n){return[(n>>>8)&255,n&255];}
-function u32(n){return[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255];}
-function readU16(a,o){return(a[o]<<8)|a[o+1];}
-function readU32(a,o){return((a[o]<<24)|(a[o+1]<<16)|(a[o+2]<<8)|a[o+3])>>>0;}
-function utf8(s){return new TextEncoder().encode(s);}
-function concat(arrays){const n=arrays.reduce((s,a)=>s+a.length,0),out=new Uint8Array(n);let p=0;for(const a of arrays){out.set(a,p);p+=a.length;}return out;}
-function bytesToNibbles(bytes){const out=new Uint8Array(bytes.length*2);for(let i=0;i<bytes.length;i++){out[i*2]=bytes[i]>>>4;out[i*2+1]=bytes[i]&15;}return out;}
-function nibblesToBytes(nibs){if(nibs.length%2)throw new Error("シンボル数が不正です");const out=new Uint8Array(nibs.length/2);for(let i=0;i<out.length;i++)out[i]=(nibs[i*2]<<4)|nibs[i*2+1];return out;}
-function makeFrame(fileBytes,fileName,index,total){
-  const name=index===0?utf8(fileName):new Uint8Array(0);
-  const begin=index*CHUNK_SIZE, payload=fileBytes.subarray(begin,Math.min(fileBytes.length,begin+CHUNK_SIZE));
-  const header=concat([utf8("OTF1"),u32(index),u32(total),u32(fileBytes.length),u32(crc32(payload)),u16(name.length),u16(payload.length),name]);
-  return concat([header,payload]);
-}
-function makeFrameWave(frame,rate){
-  const n=Math.max(1,Math.round(rate*SYMBOL_MS/1000)), markerN=Math.round(rate*MARKER_MS/1000), gapN=Math.round(rate*GAP_MS/1000);
-  const nibs=bytesToNibbles(frame), total=markerN+gapN+(SYNC.length+nibs.length)*n;
-  const out=new Float32Array(total);
-  function putTone(offset,count,freq,amp){
-    const fade=Math.min(Math.floor(count*.15),Math.round(rate*.003));
-    for(let i=0;i<count;i++){
-      let env=1;if(fade>0&&i<fade)env=i/fade;else if(fade>0&&i>=count-fade)env=(count-1-i)/fade;
-      out[offset+i]=amp*env*Math.sin(2*Math.PI*freq*i/rate);
-    }
-  }
-  putTone(0,markerN,800,.55);
-  let pos=markerN+gapN;
-  for(const s of SYNC){putTone(pos,n,TONES[s],.58);pos+=n;}
-  for(let i=0;i<nibs.length;i++){putTone(pos,n,TONES[nibs[i]],.58);pos+=n;}
-  return out;
-}
-async function playFloatChunk(samples,ctx){
-  const rate=ctx.sampleRate;
-  let output=samples;
-  if(rate!==SAMPLE_RATE){
-    const len=Math.round(samples.length*rate/SAMPLE_RATE);output=new Float32Array(len);
-    for(let i=0;i<len;i++){const x=i*SAMPLE_RATE/rate,j=Math.floor(x),f=x-j;output[i]=samples[Math.min(j,samples.length-1)]*(1-f)+samples[Math.min(j+1,samples.length-1)]*f;}
-  }
-  const buffer=ctx.createBuffer(1,output.length,rate);buffer.copyToChannel(output,0);
-  const src=ctx.createBufferSource();src.buffer=buffer;src.connect(ctx.destination);sendSource=src;
-  await new Promise((resolve,reject)=>{src.onended=resolve;try{src.start();}catch(e){reject(e);}});
-  sendSource=null;
-}
-function goertzel(samples,rate,freq){
-  const n=samples.length,k=Math.round(n*freq/rate),w=2*Math.PI*k/n,coeff=2*Math.cos(w);let q0=0,q1=0,q2=0;
-  for(let i=0;i<n;i++){q0=coeff*q1-q2+samples[i];q2=q1;q1=q0;}
-  return q1*q1+q2*q2-coeff*q1*q2;
-}
-function detectTone(samples,rate){
-  let best=0,bestE=-Infinity;
-  for(let i=0;i<TONES.length;i++){const e=goertzel(samples,rate,TONES[i]);if(e>bestE){bestE=e;best=i;}}
-  return best;
-}
-function markerRatio(samples,rate,start,win){
-  const seg=samples.subarray(start,Math.min(samples.length,start+win));if(seg.length<win*.8)return 0;
-  const target=goertzel(seg,rate,800);let energy=0;for(let i=0;i<seg.length;i+=2)energy+=seg[i]*seg[i];
-  return target/(energy*seg.length+1e-12);
-}
-function findMarker(samples,rate,from){
-  const win=Math.max(64,Math.round(rate*.008)),hop=Math.max(1,Math.round(rate*.004));
-  let active=false,first=-1;
-  for(let p=Math.max(0,from);p+win<samples.length;p+=hop){
-    const hit=markerRatio(samples,rate,p,win)>.055;
-    if(hit&&!active){active=true;first=p;}
-    if(!hit&&active){
-      if(p-first>=rate*.04)return first;
-      active=false;first=-1;
-    }
-  }
-  if(active&&samples.length-first>=rate*.04)return first;
-  return -1;
-}
-function decodeFrameAt(samples,rate,markerStart){
-  const n=Math.max(1,Math.round(rate*SYMBOL_MS/1000));
-  const base=markerStart+Math.round(rate*(MARKER_MS+GAP_MS)/1000);
-  // Search timing phase around the coarse marker position; choose the best known 16-symbol sync.
-  let bestOffset=base,bestScore=-1;
-  const radius=Math.round(rate*.004),step=Math.max(1,Math.round(rate*.0002));
-  for(let delta=-radius;delta<=radius;delta+=step){
-    let score=0,valid=true;
-    for(let i=0;i<SYNC.length;i++){
-      const a=base+delta+i*n,b=a+n;if(a<0||b>samples.length){valid=false;break;}
-      if(detectTone(samples.subarray(a+Math.floor(n*.1),a+Math.ceil(n*.9)),rate)===SYNC[i])score++;
-    }
-    if(valid&&score>bestScore){bestScore=score;bestOffset=base+delta;}
-    if(bestScore===SYNC.length)break;
-  }
-  if(bestScore<12)throw new Error("同期に失敗しました。音量・距離・反響を確認してください。");
-  let pos=bestOffset+SYNC.length*n;
-  function readNibs(count){
-    if(pos+count*n>samples.length)throw new Error("録音が途中で終了しています。");
-    const out=new Uint8Array(count);
-    for(let i=0;i<count;i++){const a=pos+i*n;out[i]=detectTone(samples.subarray(a+Math.floor(n*.1),a+Math.ceil(n*.9)),rate);}
-    pos+=count*n;return out;
-  }
-  function readBytes(count){return nibblesToBytes(readNibs(count*2));}
-  const h=readBytes(24);
-  if(new TextDecoder().decode(h.subarray(0,4))!=="OTF1")throw new Error("フレームヘッダーを認識できません。");
-  const index=readU32(h,4),total=readU32(h,8),fileSize=readU32(h,12),crc=readU32(h,16),nameLen=readU16(h,20),payloadLen=readU16(h,22);
-  if(fileSize>MAX_FILE_SIZE||total<1||total>Math.ceil(MAX_FILE_SIZE/CHUNK_SIZE)||index>=total||nameLen>4096||payloadLen>CHUNK_SIZE)throw new Error("フレーム情報が上限外です。");
-  const name=nameLen?new TextDecoder().decode(readBytes(nameLen)):"";
-  const payload=readBytes(payloadLen);
-  if(crc32(payload)!==crc)throw new Error(`チャンク ${index+1}/${total} のCRC-32検証に失敗しました。`);
-  return {index,total,fileSize,name,payload,next:markerStart+Math.round(rate*(MARKER_MS+GAP_MS)/1000)+(SYNC.length+(24+nameLen+payloadLen)*2)*n};
-}
-$("fileInput").addEventListener("change",()=>{
-  selectedFile=$("fileInput").files[0]||null;$("sendBtn").disabled=!selectedFile;
-  $("sendMeta").textContent=selectedFile?`${selectedFile.name} · ${fmtBytes(selectedFile.size)} · ${selectedFile.type||"形式不明"}`:"ファイル未選択";
-  setStatus("sendStatus",selectedFile?(selectedFile.size>MAX_FILE_SIZE?"上限1 MiBを超えています。別のファイルを選択してください。":"送信準備完了。受信側で先に録音を開始してください。"):"ファイルを選択してください.",selectedFile&&selectedFile.size>MAX_FILE_SIZE?"bad":"");
-  $("sendBtn").disabled=!selectedFile||selectedFile.size>MAX_FILE_SIZE;
-});
-$("sendBtn").addEventListener("click",async()=>{
-  if(!selectedFile)return;
-  $("sendBtn").disabled=true;$("stopSendBtn").disabled=false;sendStop=false;
-  try{
-    if(selectedFile.size>MAX_FILE_SIZE)throw new Error("送信上限は1 MiB（1,048,576 bytes）です。");
-    const bytes=new Uint8Array(await selectedFile.arrayBuffer()),name=selectedFile.name;
-    const total=Math.max(1,Math.ceil(bytes.length/CHUNK_SIZE));
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();sendAudioCtx=ctx;await ctx.resume();
-    const rate=ctx.sampleRate;
-    if(rate<44100)throw new Error(`出力サンプルレートが${rate}Hzです。16-FSK転送には44.1kHz以上を推奨します。`);
-    const approx=Math.ceil((MARKER_MS+GAP_MS)/1000*total+(bytes.length*2+total*100)*SYMBOL_MS/1000);
-    setStatus("sendStatus",`送信準備完了：${name} · ${fmtBytes(bytes.length)} · ${total}チャンク。理論上の所要時間は約${Math.ceil(approx/60)}分です。`,`warn`);
-    for(let i=0;i<total;i++){
-      if(sendStop)throw new Error("送信を停止しました。");
-      const frame=makeFrame(bytes,name,i,total),wave=makeFrameWave(frame,rate);
-      setStatus("sendStatus",`送信中：チャンク ${i+1}/${total} · ${name}。端末を近づけ、音量は中程度にしてください。`,"warn");
-      await playFloatChunk(wave,ctx);
-      $("sendProgress").value=Math.round((i+1)/total*100);$("sendPct").textContent=$("sendProgress").value+"%";
-    }
-    setStatus("sendStatus","全チャンクの再生が終了しました。受信側で録音を停止して復号してください。","good");
-  }catch(e){setStatus("sendStatus","送信エラー："+e.message,"bad");}
-  finally{if(sendAudioCtx){try{await sendAudioCtx.close();}catch{}sendAudioCtx=null;}sendSource=null;$("sendBtn").disabled=!selectedFile||selectedFile.size>MAX_FILE_SIZE;$("stopSendBtn").disabled=true;}
-});
-$("stopSendBtn").addEventListener("click",()=>{
-  sendStop=true;if(sendSource){try{sendSource.stop();}catch{}}
-  setStatus("sendStatus","送信停止を要求しました。","warn");$("stopSendBtn").disabled=true;
-});
-$("startRecBtn").addEventListener("click",async()=>{
-  try{
-    recorded=[];micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
-    recCtx=new(window.AudioContext||window.webkitAudioContext)();await recCtx.resume();
-    const source=recCtx.createMediaStreamSource(micStream);processor=recCtx.createScriptProcessor(4096,1,1);
-    processor.onaudioprocess=e=>{if(recording){recorded.push(new Float32Array(e.inputBuffer.getChannelData(0)));const total=recorded.reduce((s,a)=>s+a.length,0);$("recvPct").textContent=fmtBytes(total*4)+" recorded";}};
-    source.connect(processor);processor.connect(recCtx.destination);recording=true;
-    $("startRecBtn").disabled=true;$("stopRecBtn").disabled=false;
-    setStatus("recvStatus",`録音中（入力 ${recCtx.sampleRate} Hz）。送信側の再生開始前に録音を始めてください。1 MiB受信時は録音メモリが数百MBになる可能性があります。`,"good");
-  }catch(e){setStatus("recvStatus","マイクを開始できません："+e.message,"bad");}
-});
-$("stopRecBtn").addEventListener("click",async()=>{
-  recording=false;$("stopRecBtn").disabled=true;
-  try{
-    if(processor){processor.disconnect();processor.onaudioprocess=null;processor=null;}
-    if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
-    const rate=recCtx?recCtx.sampleRate:48000;if(recCtx){await recCtx.close();recCtx=null;}
-    setStatus("recvStatus","録音を解析しています。長時間録音では数分かかる場合があります…","warn");
-    const totalSamples=recorded.reduce((s,a)=>s+a.length,0),samples=new Float32Array(totalSamples);let off=0;
-    for(const c of recorded){samples.set(c,off);off+=c.length;}recorded=[];
-    const firstMarker=findMarker(samples,rate,0);if(firstMarker<0)throw new Error("同期音が見つかりません。録音中に全チャンクが再生されたか確認してください。");
-    let cursor=firstMarker,frames=new Map(),expectedTotal=null,expectedSize=null,filename="",scanFrom=0,guard=0;
-    while(cursor>=0&&cursor<samples.length&&guard++<100){
-      let frame;
-      try{frame=decodeFrameAt(samples,rate,cursor);}catch(e){
-        const next=findMarker(samples,rate,cursor+Math.round(rate*.05));
-        if(next<0)throw e;cursor=next;continue;
-      }
-      if(expectedTotal===null){expectedTotal=frame.total;expectedSize=frame.fileSize;}
-      if(frame.total!==expectedTotal||frame.fileSize!==expectedSize)throw new Error("異なる転送のフレームが混在しています。");
-      if(frame.name)filename=frame.name;
-      if(!frames.has(frame.index))frames.set(frame.index,frame.payload);
-      $("recvProgress").value=Math.round(frames.size/expectedTotal*100);$("recvPct").textContent=`${frames.size}/${expectedTotal} チャンク`;
-      if(frames.size===expectedTotal)break;
-      const approximateNext=cursor+Math.round(rate*(MARKER_MS+GAP_MS)/1000)+(SYNC.length+(24+(frame.index===0?utf8(filename).length:0)+frame.payload.length)*2)*Math.max(1,Math.round(rate*SYMBOL_MS/1000));
-      cursor=findMarker(samples,rate,Math.max(approximateNext-Math.round(rate*.01),cursor+Math.round(rate*.05)));
-    }
-    if(expectedTotal===null)throw new Error("受信フレームを復元できませんでした。");
-    if(frames.size!==expectedTotal){const missing=[];for(let i=0;i<expectedTotal;i++)if(!frames.has(i))missing.push(i+1);throw new Error(`チャンク不足：${frames.size}/${expectedTotal}。未受信: ${missing.slice(0,12).join(", ")}${missing.length>12?"…":""}`);}
-    const ordered=[];for(let i=0;i<expectedTotal;i++)ordered.push(frames.get(i));
-    const data=concat(ordered);if(data.length!==expectedSize)throw new Error("復元サイズが一致しません。");
-    const blob=new Blob([data],{type:"application/octet-stream"}),url=URL.createObjectURL(blob),link=$("downloadLink");
-    link.href=url;link.download=filename||"received.bin";link.hidden=false;link.textContent="ファイルを保存："+(filename||"received.bin");link.style.display="inline-block";link.style.marginTop="12px";link.style.color="#7dd3fc";
-    setStatus("recvStatus",`受信成功：${filename||"received.bin"} · ${fmtBytes(data.length)} · ${expectedTotal}チャンク。全チャンクのCRC-32検証に成功しました。下のリンクから保存できます。`,"good");
-    $("recvProgress").value=100;$("recvPct").textContent="100%";
-  }catch(e){setStatus("recvStatus","復号に失敗しました："+e.message,"bad");}
-  finally{$("startRecBtn").disabled=false;if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}}
-});
+  <!-- 受信セクション -->
+  <div class="card">
+    <h2>2. 受信 (マイク)</h2>
+    <button id="listenBtn">マイク受信を開始</button>
+    <div class="status" id="recvStatus">待機中...</div>
+  </div>
 
-// Independent 16-FSK octave sweep test. This does not change the legacy 4-FSK transfer path.
-const TEST_SYMBOL_MS = 1;
-const TEST_AMPLITUDE = 0.60;
-const TEST_OCTAVES = [4,5,6,7,8,9,10];
-const TEST_REPEATS = 12;
-const TEST_BASE_C0 = 16.351597831287414;
-let testRecCtx=null, testProcessor=null, testMicStream=null, testRecording=false, testChunks=[];
-let testSendCtx=null, testSendSource=null, testSendBusy=false;
-let testExpectedSlots=[];
-function testFreq(octave,slot){ return TEST_BASE_C0*Math.pow(2,octave)*Math.pow(2,slot/16); }
-function testNyquist(rate){ return rate/2; }
-function testLimit(rate){ return Math.min(rate/2*.98,20000); }
-function setTestStatus(text,type=""){const el=$("testStatus");el.textContent=text;el.className="status"+(type?" "+type:"");}
-function testPlan(rate){
-  const nyq=testNyquist(rate);
-  const slots=[];
-  for(const octave of TEST_OCTAVES){
-    for(let r=0;r<TEST_REPEATS;r++){
-      // A different order on each pass avoids long runs of a single frequency.
-      for(let j=0;j<16;j++){
-        const slot=(j*5+r*3)%16;
-        const freq=testFreq(octave,slot);
-        slots.push({octave,slot,freq,repeat:r,eligible:freq<Math.min(nyq*0.98,20000)});
+  <script>
+    // 通信設定（パラメーター）
+    const BASE_FREQ = 2000;    // 開始周波数 (Hz)
+    const FREQ_STEP = 150;     // 各ビット間の周波数間隔 (Hz)
+    const BITS_PER_SYMBOL = 8; // 1回の音で送るビット数（同時トーン数）
+    const SYMBOL_DURATION = 0.08; // 1音あたりの長さを0.08秒に（高速化）
+    const SYNC_FREQ = 1000;    // 同期音（開始のサイン）
+
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
+      return audioCtx;
     }
-  }
-  return {slots,nyquist:nyq,rate};
-}
-function makeTestWave(rate){
-  const plan=testPlan(rate);
-  const leadN=Math.round(rate*.25), markerN=Math.round(rate*.12), gapN=Math.round(rate*.03);
-  const symbolN=Math.max(1,Math.round(rate*TEST_SYMBOL_MS/1000));
-  const total=leadN+markerN+gapN+plan.slots.length*symbolN+Math.round(rate*.15);
-  const out=new Float32Array(total);
-  // A 600 Hz marker is outside the tested C4..C10 tone slots; onset provides a timing reference.
-  for(let i=0;i<markerN;i++){
-    const env=Math.min(1,i/Math.max(1,Math.round(rate*.005)),(markerN-1-i)/Math.max(1,Math.round(rate*.005)));
-    out[leadN+i]=TEST_AMPLITUDE*Math.max(0,env)*Math.sin(2*Math.PI*600*i/rate);
-  }
-  let pos=leadN+markerN+gapN;
-  for(let idx=0;idx<plan.slots.length;idx++){
-    const f=plan.slots[idx].freq;
-    // Do not synthesize tones at/above the output Nyquist limit. Keep their time slots silent.
-    if(f<Math.min(plan.nyquist*0.98,20000)){
-      for(let i=0;i<symbolN;i++){
-        const edge=Math.min(1,(i+1)/Math.max(1,symbolN*.15),(symbolN-i)/Math.max(1,symbolN*.15));
-        out[pos+i]=TEST_AMPLITUDE*Math.max(0,edge)*Math.sin(2*Math.PI*f*i/rate);
+
+    // --- 送信処理 ---
+    document.getElementById('sendBtn').addEventListener('click', async () => {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') await ctx.resume();
+
+      const text = document.getElementById('sendText').value;
+      if (!text) return;
+
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(text);
+
+      const now = ctx.currentTime;
+      let time = now + 0.1;
+
+      // 1. 同期音（プリアンブル）を鳴らす
+      playTone(ctx, SYNC_FREQ, time, 0.2);
+      time += 0.25;
+
+      // 2. データを各バイトごとにマルチトーン（和音）に変換して鳴らす
+      for (let i = 0; i < bytes.length; i++) {
+        const byte = bytes[i];
+        for (let bit = 0; bit < 8; bit++) {
+          if ((byte >> bit) & 1) {
+            const freq = BASE_FREQ + (bit * FREQ_STEP);
+            playTone(ctx, freq, time, SYMBOL_DURATION * 0.9); // 音同士の繋がりをスムーズに
+          }
+        }
+        time += SYMBOL_DURATION;
       }
+
+      // 3. 終了同期音
+      playTone(ctx, SYNC_FREQ, time, 0.2);
+    });
+
+    function playTone(ctx, freq, startTime, duration) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      
+      // 音のパチパチノイズを防ぐエンベロープ
+      gain.gain.setValueAtTime(0.01, startTime);
+      gain.gain.linearRampToValueAtTime(0.1, startTime + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
     }
-    pos+=symbolN;
-    if(idx%64===0){$("testProgress").value=Math.round(idx/plan.slots.length*100);$("testPct").textContent=$("testProgress").value+"%";}
-  }
-  return {samples:out,plan,offsetSamples:leadN+markerN+gapN,symbolN};
-}
-function testGoertzelExact(samples,rate,freq){
-  // Exact-frequency correlation avoids rounding every tone to a coarse FFT bin.
-  let re=0,im=0;
-  const step=2*Math.PI*freq/rate;
-  for(let i=0;i<samples.length;i++){re+=samples[i]*Math.cos(step*i);im-=samples[i]*Math.sin(step*i);}
-  return re*re+im*im;
-}
-function testDetect(samples,rate,slotStart,symbolN,frequencies){
-  // Use the central 70% of a symbol to reduce boundary-transition effects.
-  const a=slotStart+Math.floor(symbolN*.15), b=Math.min(samples.length,slotStart+Math.ceil(symbolN*.85));
-  if(b-a<4)return -1;
-  const seg=samples.subarray(a,b);let best=-1,bestEnergy=0;
-  for(let i=0;i<frequencies.length;i++){
-    if(frequencies[i]>=testLimit(rate))continue;
-    const e=testGoertzelExact(seg,rate,frequencies[i]);
-    if(e>bestEnergy){bestEnergy=e;best=i;}
-  }
-  return best;
-}
-function testRenderResults(rows,meta){
-  let html=`<p class="testnote">測定結果（実測）：入力サンプルレート ${meta.rate} Hz · ナイキスト周波数 ${meta.nyquist.toFixed(0)} Hz · 1ms記号 ${meta.symbolN} samples。測定前の設定とは別に表示しています。</p>`;
-  html+='<table class="testtable"><thead><tr><th>オクターブ</th><th>周波数範囲</th><th>有効音数</th><th>検出率</th><th>判定</th></tr></thead><tbody>';
-  for(const row of rows){
-    const rate=row.tested?Math.round(row.detected/row.tested*100):0;
-    const status=!row.tested?'測定対象外':rate>=90?'良好':rate>=60?'要確認':'不良';
-    html+=`<tr><td>${row.octave}</td><td>${row.min.toFixed(0)}–${row.max.toFixed(0)} Hz</td><td class="num">${row.eligible}/16</td><td class="num">${row.tested?rate+'%':'—'} (${row.detected}/${row.tested})</td><td>${status}</td></tr>`;
-  }
-  html+='</tbody></table><p class="testnote">判定基準：90%以上＝良好、60〜89%＝要確認、60%未満＝不良。これは単発の環境依存テストで、ファイル転送時の成功率や実効速度を直接保証しません。</p>';
-  $("testResults").innerHTML=html;
-}
-$("testRecBtn").addEventListener("click",async()=>{
-  try{
-    testChunks=[];
-    testMicStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
-    testRecCtx=new (window.AudioContext||window.webkitAudioContext)();await testRecCtx.resume();
-    const source=testRecCtx.createMediaStreamSource(testMicStream);
-    testProcessor=testRecCtx.createScriptProcessor(4096,1,1);
-    testProcessor.onaudioprocess=e=>{if(testRecording)testChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));};
-    source.connect(testProcessor);testProcessor.connect(testRecCtx.destination);
-    testRecording=true;$("testRecBtn").disabled=true;$("testStopBtn").disabled=false;
-    $("testSetup").textContent=`測定前の設定：16-FSK · 1ms/記号 · 振幅60% · オクターブ4〜10 · 16音/オクターブ。受信入力サンプルレート：${testRecCtx.sampleRate} Hz、ナイキスト：${testNyquist(testRecCtx.sampleRate).toFixed(0)} Hz。`;
-    setTestStatus("テスト録音中。送信側で「全帯域テスト音を送信」を押してください。再生終了後に録音を停止して集計します。","good");
-  }catch(e){setTestStatus("テスト録音を開始できません："+e.message,"bad");}
-});
-$("testSendBtn").addEventListener("click",async()=>{
-  if(testSendBusy)return;
-  testSendBusy=true;$("testSendBtn").disabled=true;
-  try{
-    testSendCtx=new (window.AudioContext||window.webkitAudioContext)();await testSendCtx.resume();
-    const rate=testSendCtx.sampleRate;
-    const built=makeTestWave(rate);
-    const buffer=testSendCtx.createBuffer(1,built.samples.length,rate);buffer.copyToChannel(built.samples,0);
-    const src=testSendCtx.createBufferSource();src.buffer=buffer;src.connect(testSendCtx.destination);testSendSource=src;
-    const available=TEST_OCTAVES.map(o=>{let n=0;for(let i=0;i<16;i++)if(testFreq(o,i)<testLimit(rate))n++;return `${o}:${n}/16`;}).join(" · ");
-    $("testSetup").textContent=`送信側の実測設定：AudioContext ${rate} Hz · ナイキスト ${testNyquist(rate).toFixed(0)} Hz · 振幅60% · 1ms/記号。各オクターブ有効音数（送信側）：${available}。`;
-    setTestStatus("全帯域テスト音を送信中です。端末の音量は60%を目安にしてください。","warn");
-    src.onended=()=>{if(testSendCtx){testSendCtx.close();testSendCtx=null;}testSendSource=null;testSendBusy=false;$("testSendBtn").disabled=false;$("testProgress").value=100;$("testPct").textContent="送信完了";setTestStatus("テスト音の送信が完了しました。受信側で録音を停止して集計してください。","good");};src.start();
-  }catch(e){if(testSendCtx){try{await testSendCtx.close();}catch{}testSendCtx=null;}testSendBusy=false;$("testSendBtn").disabled=false;setTestStatus("テスト音を送信できません："+e.message,"bad");}
-});
-$("testStopBtn").addEventListener("click",async()=>{
-  testRecording=false;$("testStopBtn").disabled=true;
-  try{
-    if(testProcessor){testProcessor.disconnect();testProcessor.onaudioprocess=null;testProcessor=null;}
-    if(testMicStream){testMicStream.getTracks().forEach(t=>t.stop());testMicStream=null;}
-    const rate=testRecCtx?testRecCtx.sampleRate:48000;
-    if(testRecCtx){await testRecCtx.close();testRecCtx=null;}
-    const total=testChunks.reduce((sum,c)=>sum+c.length,0),samples=new Float32Array(total);let at=0;
-    for(const c of testChunks){samples.set(c,at);at+=c.length;}
-    if(!samples.length)throw new Error("録音データがありません。");
-    // Locate the 600 Hz marker onset with overlapping 8 ms windows.
-    const win=Math.max(16,Math.round(rate*.002)),hop=Math.max(1,Math.round(rate*.0001));let marker=-1;
-    for(let p=0;p+win<samples.length;p+=hop){
-      const seg=samples.subarray(p,p+win);const target=testGoertzelExact(seg,rate,600);let totalE=0;for(let i=0;i<seg.length;i++)totalE+=seg[i]*seg[i];
-      if(target/(totalE*seg.length+1e-12)>.055){marker=p;break;}
-    }
-    if(marker<0)throw new Error("600Hzの同期音を検出できません。送信音量・距離を確認してください。");
-    const symbolN=Math.max(1,Math.round(rate*TEST_SYMBOL_MS/1000));
-    const payloadStart=marker+Math.round(rate*(.12+.03-.0002));
-    const rows=[];let slotIndex=0;
-    for(const octave of TEST_OCTAVES){
-      let detected=0,tested=0,eligible=0;const freqs=Array.from({length:16},(_,i)=>testFreq(octave,i));
-      for(let rep=0;rep<TEST_REPEATS;rep++)for(let j=0;j<16;j++){
-        const slot=(j*5+rep*3)%16,f=freqs[slot];
-        const pos=payloadStart+slotIndex*symbolN;slotIndex++;
-        if(f>=testLimit(rate))continue;
-        eligible++;
-        const found=testDetect(samples,rate,pos,symbolN,freqs);
-        tested++;if(found===slot)detected++;
+
+    // --- 受信処理 ---
+    let isListening = false;
+    let rxBuffer = [];
+
+    document.getElementById('listenBtn').addEventListener('click', async () => {
+      const statusEl = document.getElementById('recvStatus');
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') await ctx.resume();
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 2048; // 周波数分解能
+        source.connect(analyser);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        isListening = true;
+        statusEl.innerText = "受信待機中... 音を待っています";
+
+        let receiving = false;
+        let lastReceivedTime = 0;
+
+        function analyze() {
+          if (!isListening) return;
+
+          analyser.getByteFrequencyData(dataArray);
+
+          // 特定の周波数の強度を取得する関数
+          function getEnergy(freq) {
+            const bin = Math.round(freq / (ctx.sampleRate / analyser.fftSize));
+            return dataArray[bin];
+          }
+
+          const syncEnergy = getEnergy(SYNC_FREQ);
+          const THRESHOLD = 140; // 感度しきい値
+
+          // 開始シグナル判定
+          if (!receiving && syncEnergy > THRESHOLD) {
+            receiving = true;
+            rxBuffer = [];
+            statusEl.innerText = "データ受信中...";
+            lastReceivedTime = Date.now();
+          }
+
+          // データ受信ループ（簡易タイマー）
+          if (receiving) {
+            // 各ビットのトーンを検出
+            let currentByte = 0;
+            let detected = false;
+            for (let bit = 0; bit < 8; bit++) {
+              const freq = BASE_FREQ + (bit * FREQ_STEP);
+              if (getEnergy(freq) > THRESHOLD) {
+                currentByte |= (1 << bit);
+                detected = true;
+              }
+            }
+
+            if (detected) {
+              // 重複登録を防ぐため簡易チェック
+              const last = rxBuffer[rxBuffer.length - 1];
+              if (last !== currentByte) {
+                rxBuffer.push(currentByte);
+                lastReceivedTime = Date.now();
+              }
+            }
+
+            // 一定時間音が出なくなったら終了と判断
+            if (Date.now() - lastReceivedTime > 1500 && rxBuffer.length > 0) {
+              receiving = false;
+              const decoder = new TextDecoder();
+              const result = decoder.decode(new Uint8Array(rxBuffer));
+              statusEl.innerText = "【受信完了】: " + result;
+              rxBuffer = [];
+            }
+          }
+
+          requestAnimationFrame(analyze);
+        }
+
+        analyze();
+
+      } catch (err) {
+        statusEl.innerText = "マイクアクセスエラー: " + err.message;
       }
-      rows.push({octave,min:freqs[0],max:freqs[15],eligible:Math.min(16,eligible/TEST_REPEATS),tested,detected});
-    }
-    testRenderResults(rows,{rate,nyquist:rate/2,symbolN});
-    $("testProgress").value=100;$("testPct").textContent="解析完了";
-    setTestStatus("周波数帯テストの集計が完了しました。結果はこの録音・端末・音量での実測値です。","good");
-  }catch(e){setTestStatus("集計できませんでした："+e.message,"bad");}
-  finally{$("testRecBtn").disabled=false;}
-});
-</script>
+    });
+  </script>
 </body>
 </html>

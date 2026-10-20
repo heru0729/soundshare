@@ -50,12 +50,39 @@
     }
     .success { color: #008000; font-weight: bold; }
     .error { color: #cc0000; font-weight: bold; }
+    
+    /* レベルメーターのスタイル */
+    .meter-container {
+      margin-top: 10px;
+      background: #ddd;
+      border-radius: 4px;
+      height: 20px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .meter-bar {
+      height: 100%;
+      width: 0%;
+      background: #4caf50;
+      transition: width 0.1s ease;
+    }
   </style>
 </head>
 <body>
 
   <h1>🔊 堅牢型音響データモデム (16-MFSK)</h1>
   <p>環境音や反響に強い、確実にデコードできる音響通信システムです。</p>
+
+  <!-- 3. マイク動作テストセクション -->
+  <div class="card">
+    <h2>3. マイク動作テスト</h2>
+    <p>マイクが音を正しく拾えているかリアルタイムで確認します。</p>
+    <button id="testMicBtn">マイクテスト開始</button>
+    <div class="meter-container">
+      <div id="micMeter" class="meter-bar"></div>
+    </div>
+    <div class="status" id="testStatus">テスト停止中</div>
+  </div>
 
   <!-- 送信セクション -->
   <div class="card">
@@ -74,12 +101,11 @@
   <script>
     // --- 通信パラメータ設定 ---
     const SAMPLE_RATE = 44100;
-    const FFT_SIZE = 4096;          // 周波数分解能を高める
-    const SYMBOL_DURATION = 0.12;   // 1シンボル（4ビット）あたりの秒数 (120ms)
-    const BASE_FREQ = 1500;         // 開始周波数 (1500Hz)
-    const FREQ_STEP = 100;          // 周波数間隔 (100Hzごと × 16波 = 1500〜3000Hz)
+    const FFT_SIZE = 4096;
+    const SYMBOL_DURATION = 0.12;
+    const BASE_FREQ = 1500;
+    const FREQ_STEP = 100;
     
-    // 同期用トーン
     const SYNC_TONE_1 = 1000;
     const SYNC_TONE_2 = 3200;
 
@@ -92,6 +118,66 @@
       return audioCtx;
     }
 
+    // --- マイクテスト機能 ---
+    let isTestingMic = false;
+
+    document.getElementById('testMicBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('testMicBtn');
+      const statusEl = document.getElementById('testStatus');
+      const meterEl = document.getElementById('micMeter');
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') await ctx.resume();
+
+      if (isTestingMic) {
+        isTestingMic = false;
+        btn.innerText = "マイクテスト開始";
+        statusEl.innerText = "テスト停止中";
+        meterEl.style.width = "0%";
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        isTestingMic = true;
+        btn.innerText = "マイクテスト停止";
+        statusEl.innerText = "マイク動作中... 声を出したりスピーカーを鳴らしてバーが動くか確認してください";
+
+        function updateMeter() {
+          if (!isTestingMic) return;
+          analyser.getByteTimeDomainData(dataArray);
+
+          // 音の振幅（RMS）を計算
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const v = (dataArray[i] - 128) / 128;
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / dataArray.length);
+          const percentage = Math.min(100, Math.round(rms * 300)); // スケール調整
+
+          meterEl.style.width = percentage + '%';
+          if (percentage > 50) {
+            meterEl.style.background = '#ff9800';
+          } else {
+            meterEl.style.background = '#4caf50';
+          }
+
+          requestAnimationFrame(updateMeter);
+        }
+
+        updateMeter();
+
+      } catch (err) {
+        statusEl.innerText = "マイクアクセスエラー: " + err.message;
+      }
+    });
+
     // --- 送信ロジック (16-MFSK) ---
     document.getElementById('sendBtn').addEventListener('click', async () => {
       const ctx = getAudioContext();
@@ -103,7 +189,6 @@
       const encoder = new TextEncoder();
       const rawBytes = encoder.encode(text);
 
-      // パケット構築: [長さバイト] + [データ本体] + [チェックサム(XOR)]
       let checksum = 0;
       for (let b of rawBytes) checksum ^= b;
 
@@ -112,22 +197,19 @@
       packet.set(rawBytes, 1);
       packet[packet.length - 1] = checksum;
 
-      // バイトを4ビット(ニブル)ずつに分解
       const nibbles = [];
       for (let b of packet) {
-        nibbles.push((b >> 4) & 0x0F); // 上位4bit
-        nibbles.push(b & 0x0F);        // 下位4bit
+        nibbles.push((b >> 4) & 0x0F);
+        nibbles.push(b & 0x0F);
       }
 
       let time = ctx.currentTime + 0.1;
 
-      // 1. 同期プリアンブルを鳴らす (SYNC1 -> SYNC2)
       playPureTone(ctx, SYNC_TONE_1, time, 0.08);
       time += 0.09;
       playPureTone(ctx, SYNC_TONE_2, time, 0.08);
       time += 0.12;
 
-      // 2. ニブルごとに対応する周波数を鳴らす
       for (let nibble of nibbles) {
         const freq = BASE_FREQ + (nibble * FREQ_STEP);
         playPureTone(ctx, freq, time, SYMBOL_DURATION * 0.9);
@@ -143,7 +225,6 @@
       osc.type = 'sine';
       osc.frequency.value = freq;
       
-      // クリックノイズを防ぐエンベロープ
       gain.gain.setValueAtTime(0.01, startTime);
       gain.gain.linearRampToValueAtTime(0.2, startTime + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
@@ -167,7 +248,7 @@
         const source = ctx.createMediaStreamSource(stream);
         const analyser = ctx.createAnalyser();
         analyser.fftSize = FFT_SIZE;
-        analyser.smoothingTimeConstant = 0.1; // 追従性を上げる
+        analyser.smoothingTimeConstant = 0.1;
         source.connect(analyser);
 
         const bufferLength = analyser.frequencyBinCount;
@@ -176,8 +257,7 @@
         isListening = true;
         statusEl.innerText = "受信待機中... 音を鳴らしてください";
 
-        let state = 'IDLE'; // IDLE -> SYNCING -> RECEIVING
-        let syncStep = 0;
+        let state = 'IDLE';
         let syncTimer = 0;
         let expectedNibbles = 0;
         let receivedNibbles = [];
@@ -191,31 +271,28 @@
 
         function analyze() {
           if (!isListening) return;
-          analyser.getFloatFrequencyData(dataArray); // dB単位で取得
+          analyser.getFloatFrequencyData(dataArray);
 
           const now = performance.now();
 
           if (state === 'IDLE') {
-            // プリアンブル (SYNC_TONE_1) の検出
             const p1 = getFrequencyPower(SYNC_TONE_1);
-            if (p1 > -35) { // しきい値 (dB)
+            if (p1 > -35) {
               state = 'SYNCING_2';
-              syncTimer = now + 120; // 次のトーンを待つ時間枠
+              syncTimer = now + 120;
             }
           } else if (state === 'SYNCING_2') {
             const p2 = getFrequencyPower(SYNC_TONE_2);
             if (p2 > -35) {
               state = 'RECEIVING';
               receivedNibbles = [];
-              // 同期完了直後からシンボルクロックを開始
               nextSymbolTime = performance.now() + (SYMBOL_DURATION * 1000) * 1.5;
               statusEl.innerText = "同期成功！データ受信中...";
             } else if (now > syncTimer) {
-              state = 'IDLE'; // タイムアウト
+              state = 'IDLE';
             }
           } else if (state === 'RECEIVING') {
             if (now >= nextSymbolTime) {
-              // 16個の周波数の中で最もエネルギーが強い（dBが高い）ものを探す (Argmax)
               let bestNibble = 0;
               let maxPower = -999;
 
@@ -230,18 +307,15 @@
 
               receivedNibbles.push(bestNibble);
 
-              // 最初のニブルでデータ長がわかる（2ニブル分＝1バイト）
               if (receivedNibbles.length === 2) {
                 const lengthNibbleHi = receivedNibbles[0];
                 const lengthNibbleLo = receivedNibbles[1];
                 const dataLen = (lengthNibbleHi << 4) | lengthNibbleLo;
-                // 全ニブル数 = (長さ + データ本体 + チェックサム) × 2
                 expectedNibbles = (dataLen + 2) * 2;
               }
 
               statusEl.innerText = `受信中... (${receivedNibbles.length} / ${expectedNibbles || '?'})`;
 
-              // 規定のニブル数に達したらデコード完了
               if (expectedNibbles > 0 && receivedNibbles.length >= expectedNibbles) {
                 state = 'IDLE';
                 processReceivedData(receivedNibbles, statusEl);
@@ -262,7 +336,6 @@
     });
 
     function processReceivedData(nibbles, statusEl) {
-      // 2ニブルごとにバイトに復元
       const bytes = new Uint8Array(nibbles.length / 2);
       for (let i = 0; i < bytes.length; i++) {
         bytes[i] = (nibbles[i * 2] << 4) | nibbles[i * 2 + 1];
@@ -272,7 +345,6 @@
       const actualData = bytes.slice(1, 1 + dataLen);
       const receivedChecksum = bytes[bytes.length - 1];
 
-      // チェックサム計算
       let calcChecksum = 0;
       for (let b of actualData) calcChecksum ^= b;
 
